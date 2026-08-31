@@ -8,6 +8,8 @@
 [![Downloads](https://static.pepy.tech/badge/normasbr)](https://pepy.tech/project/normasbr)
 [![readthedocs Python](https://app.readthedocs.org/projects/normasbr/badge)](https://normasbr.readthedocs.io)
 
+> ⚠️ **ATENÇÃO** ⚠️: Biblioteca ainda em estágio experimental, e sem garantias de retrocompatibilidade entre as versões.
+
 **normasbr** é uma biblioteca Python que extrai, segmenta e estrutura normativas
 brasileiras (leis, decretos, medidas provisórias etc.) a partir de HTML, PDF, DOCX ou
 TXT, convertendo textos brutos em documentos estruturados (YML), com hierarquia completa de dispositivos

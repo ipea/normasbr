@@ -44,6 +44,9 @@ class EstruturadorDadosLLM(Generic[T]):
             "stream": False,
             "temperature": 0.0,
             "chat_template_kwargs": {"enable_thinking": False},
+            "reasoning": {
+                "enabled": False,
+            },
         }
 
         resposta = self.__tentar_realizar_request(payload)
@@ -60,7 +63,7 @@ class EstruturadorDadosLLM(Generic[T]):
         for tentativa in range(self.n_tentativas):
             try:
                 session = requests.Session()
-                session.trust_env = False
+                session.trust_env = True
 
                 if self.token_acesso:
                     session.headers.update(
