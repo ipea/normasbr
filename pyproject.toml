@@ -1,6 +1,6 @@
 [project]
 name = "normasbr"
-version = "0.0.1b"
+version = "0.0.2"
 description = "Limpeza e estruturação de textos normativos brasileiros a partir de disversos formatos"
 readme = "README.md"
 license = { file = "LICENSE" }
