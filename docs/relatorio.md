@@ -33,13 +33,30 @@ A extração de blocos consiste em coletar, do HTML gerado na etapa anterior, os
 
 ### Segmentador de Blocos
 
-Ao receber os blocos da etapa anterior, o segmentador é responsável por separar os blocos em unidades atômicas e classificá-las em categorias predeterminadas. Na analogia com compiladores de linguagens de programação, esta etapa seria a análise léxica, ou tokenização.
+Ao receber os blocos da etapa anterior, o segmentador é responsável por separar os blocos em unidades atômicas e classificá-las em categorias predeterminadas. Na analogia com compiladores de linguagens de programação, esta etapa seria a análise léxica, ou "tokenização".
 
-Até a escrita deste relatório, os blocos são classificados nas seguintes categorias: desconhecido, titulo da normativa, inicio do bloco de alteração, considerando, artigo, paragrafo, inciso, alineá, item, ementa, continuação, enumeração, fim do bloco de alteração, preambulo, campo vide, agrupador, denominação do agrupador, omissis, titulo da autoridade, inicio do anexo, data, lixo, local origem, texto anexo, nome autoridade, nome penal, pena, fundamento legal. Esta modelagem dos blocos é baseada tanto nas normativas testadas quanto no [Glossário e técnica legislativa do Congresso Nacional](https://www.congressonacional.leg.br/legislacao-e-publicacoes/glossario-tecnica-legislativa).
+As categorias usadas para classificar os blocos foram baseadas tanto em diversas normativas testadas, quanto no [Glossário e técnica legislativa do Congresso Nacional](https://www.congressonacional.leg.br/legislacao-e-publicacoes/glossario-tecnica-legislativa). Até a escrita deste relatório, existem as seguintes categorias: desconhecido, titulo da normativa, inicio do bloco de alteração, considerando, artigo, paragrafo, inciso, alineá, item, ementa, continuação, enumeração, fim do bloco de alteração, preambulo, campo vide, agrupador, denominação do agrupador, omissis, titulo da autoridade, inicio do anexo, data, lixo, local origem, texto anexo, nome autoridade, nome penal, pena, fundamento legal.
+
+Tipicamente, o Segmentador considera cada bloco recebido da etapa anterior, Extração de Blocos, como um segmento. As únicas exceções atuais são a abertura e o fechamento de blocos de alteração, identificados pela presença de aspas em determinadas posições, que são separadas em segmentos próprios.
+
+Após a identificação dos segmentos, o segmentador tenta classificá-las nas categorias supramencionadas, valendo-se de dois componentes chamados Regras e Heurísticas. As Regras são a primeira etapa, elas consistem de uma expressão regular e a sua categoria. Quando a expressão regular casa com o texto do segmento atual, o segmento recebe a classificação informada pela Regra, e ignora as demais regras. Os segmentos que não casaram nenhuma vez são categorizados como "desconhecido". Um exemplo de Regra poderia ser descrito como: se o texto do bloco começa com "Parágrafo único" ou "§", então o bloco é classificado como "parágrafo".
+
+Tendo os segmentos parcialmente classificados, o Segmentador agora utiliza as chamadas Heurísticas para aprimorar as categorizações já feitas. Elas utilizam lógicas mais complexas, levando em consideração toda a sequência de blocos para realizar a tarefa. Alguns exemplos de heurísticas são: quando que títulos de normas aparecem mais de uma vez, classificar as ocorrências seguintes como "lixo", já que provavelmente tratam-se do cabeçalho do documento; quando um bloco "desconhecido" estiver depois de um título de normativa e antes dos blocos classificados como "preâmbulo", "campo vide" e "considerando", classificá-lo como "ementa".
 
 ### Estruturação dos Segmentos
 
-O resultado final é dado em um arquivo no formato `yaml`, como no exemplo abaixo.
+#TODO: Terminar
+
+Com os segmentos já classificados, a etapa seguinte consiste em processá-los de forma a reconstruir a estrutura hierárquica das normas. Esta etapa seria similar à análise sintática dos compiladores.
+
+O Estruturador tenta construir tal hierarquia baseado na sequência de segmentos, levando em consideração suas classificações e as regras de hierarquias entre os tipos. Um nó Por exemplo, um dispositivo pode conter outros dispositivos.
+
+Inúmeros segmentos são descartados nesta etapa, como os classificados como "Lixo", "Desconhecido",.
+
+Segmentos dentro de anexos atualmente são descartados. O Estruturador também não leva em consideração a hierarquia natural dos dispositivos, ele pode considerar que artigos vem antes de incisos ou parágrafos, o que tem a vantagem de permitir que .
+O Estruturador também tenta fundir os textos presentes em sequências de "continuação".
+
+O resultado final da estruturação pode ser serializado como um arquivo no formato `yaml`, como no exemplo abaixo.
 
 ```yaml
 - classe: norma
