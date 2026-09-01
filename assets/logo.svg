@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 587.91 800' width='587.91pt' height='800pt'>
+  <!--
+    normasbr — hexágono (brasão IPEA) em vinho com a árvore hierárquica das normas.
+    Cores: altere VINHO / CREME abaixo.
+    VINHO: #722F37   CREME: #F6F0F2
+  -->
+  <g id='hexagono' fill='#722F37' stroke='#F6F0F2' stroke-width='14' stroke-linejoin='round'>
+    <polygon points='5.62,173.80 5.62,506.65 293.88,673.08 582.14,506.65 582.14,173.80 293.88,7.37 5.62,173.80' />
+  </g>
+
+  <g id='arvore' stroke='#F6F0F2' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'>
+    <!-- tronco: Lei 1.234 -->
+    <line x1='134' y1='232' x2='134' y2='535' />
+    <!-- Capítulo I -->
+    <line x1='134' y1='286' x2='230' y2='286' />
+    <line x1='214' y1='286' x2='214' y2='510' />
+    <!-- Art 1º. -->
+    <line x1='214' y1='354' x2='305' y2='354' />
+    <line x1='294' y1='354' x2='294' y2='438' />
+    <!-- § 1º -->
+    <line x1='294' y1='438' x2='374' y2='438' />
+    <!-- Art. 2º -->
+    <line x1='214' y1='510' x2='294' y2='510' />
+  </g>
+
+  <g id='rotulos' fill='#F6F0F2' font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size='38'>
+    <text x='125' y='220' font-weight='700'>Lei 1.234</text>
+    <text x='240' y='299'>Capítulo I</text>
+    <text x='320' y='367'>Art 1º.</text>
+    <text x='390' y='451'>§ 1º </text>
+    <text x='310' y='523'>Art. 2º</text>
+  </g>
+
+  <text id='wordmark' x='293.88' y='762' text-anchor='middle' fill='#722F37'
+        font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size='64' font-weight='700' letter-spacing='2'>normasbr</text>
+</svg>
