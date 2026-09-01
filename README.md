@@ -4,7 +4,7 @@
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](./pyproject.toml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![CI](https://github.com/ipea/normasbr/workflows/CI/badge.svg)](https://github.com/ipea/normasbr/actions)
-[![PyPi Latest Release](https://img.shields.io/pypi/v/normasbr.svg)](https://pypi.org/project/enderecobr)
+[![PyPi Latest Release](https://img.shields.io/pypi/v/normasbr.svg)](https://pypi.org/project/normasbr)
 [![Downloads](https://static.pepy.tech/badge/normasbr)](https://pepy.tech/project/normasbr)
 [![readthedocs Python](https://app.readthedocs.org/projects/normasbr/badge)](https://normasbr.readthedocs.io)
 
