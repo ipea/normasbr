@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import requests
-import tqdm
 
 
 def download_tsv(lista_path: Path, base_path: Path):

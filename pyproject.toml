@@ -1,18 +1,27 @@
 [project]
 name = "normasbr"
-version = "0.1.0"
-description = "Extração, segmentação e estruturação de normativas brasileiras"
+version = "0.0.1"
+description = "Limpeza e estruturação de textos normativos brasileiros a partir de disversos formatos"
 readme = "README.md"
 license = { file = "LICENSE" }
-classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Text Processing :: Linguistic",
-]
 authors = [
     { name = "Gabriel Garcia de Almeida", email = "gabriel.almeida@ipea.gov.br" }
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Topic :: Text Processing :: Linguistic",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Portuguese (Brazilian)",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = ["norm", "law", "regulation", "brazil", "brasil", "regex", "parsing"]
+
 requires-python = ">=3.12"
 dependencies = [
     "dotenv>=0.9.9",
@@ -27,6 +36,11 @@ dependencies = [
     "tqdm>=4.67.3",
     "typer>=0.23.1",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ipea/normasbr"
+Repository = "https://github.com/ipea/normasbr"
+Issues = "https://github.com/ipea/normasbr/issues"
 
 [project.scripts]
 normasbr = "normasbr.cli:app"
