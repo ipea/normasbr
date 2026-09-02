@@ -53,40 +53,55 @@ O Estruturador tenta construir tal hierarquia convertendo a sequência de segmen
 
 Cada categoria de elementos mencionada acima pode ser compreendida em dois grupos: os elementos intermediários e os elementos finais. Elementos intermediários, como Normativas, Agrupadores, ou Dispositivos, podem conter outros elementos intermediários ou elementos finais. Já os elementos finais, como Ementas, Pena, Alteração de Agrupador, não podem conter elementos filhos. Tal lógica de elementos intermediários e finais, junto com restrições extras sobre quais categorias de elementos podem ser compostos com quais outras, e o uso da estrutura de dados "stack" (pilha), formam o núcleo lógico do Estruturador.
 
-TODO: TERMINAR EXEMPLO!!
-
 Para exemplificar o funcionamento do Estruturador, considera-se que já exista na pilha de elementos processados: uma Normativa, um Agrupador de Capítulo, um Agrupador de Sessão, um Dispositivo de Artigo e um Dispositivo de Parágrafo. Os próximos elemento a serem processado serão um Dispositivo de Inciso, um Dispositivo de Parágrafo e um Agrupador de Sessão.
 
 A estrutura atual pode ser visualizada assim:
 
 ```
-Pilha:
-
 Normativa
- └── Agrupador de Capítulo
-  └──
-└──
+└── Agrupador de Capítulo
+    └── Agrupador de Sessão
+        └── Dispositivo de Artigo
+            └── Dispositivo de Parágrafo
 ```
 
-Ao tentar processar o inciso, o Estruturador observa: que o último elemento na pilha é um Parágrafo, que Dispositivos podem ser filhos de outros Dispositivos, e que não existe outro Dispositivo de Inciso atualmente na pilha. Com isso, ele toma a decisão de incluir o inciso como um elemento filho do parágrafo e adiciona esse inciso na pilha.
+Ao tentar processar o inciso, o Estruturador observa que o último elemento na pilha é um Parágrafo, que Dispositivos podem ser filhos de outros Dispositivos, e que não existe outro Dispositivo de Inciso atualmente na pilha. Com isso, ele toma a decisão de incluir o inciso como um elemento filho do parágrafo e adiciona esse inciso na pilha. A estrutura resultante é dada abaixo.
 
 ```
-
+Normativa
+└── Agrupador de Capítulo
+    └── Agrupador de Sessão
+        └── Dispositivo de Artigo
+            └── Dispositivo de Parágrafo
+                └── Dispositivo de Inciso
 ```
 
-No processamento do elemento seguinte, um Dispositivo de Parágrafo, o Estruturador observa uma situação bem similar à anterior, entretanto já existe outro Dispositivo de Parágrafo na pilha. Ele então remove da pilha tanto o Inciso quanto o Parágrafo já existente, adicionando o parágrafo novo como filho do elemento anterior, o Dispositivo de Artigo, e também o adiciona o novo Parágrafo na pilha.
+No processamento do elemento seguinte, um Dispositivo de Parágrafo, o Estruturador observa uma situação bem similar à anterior, entretanto já existe outro Dispositivo de Parágrafo na pilha. Ele então remove da pilha tanto o Inciso quanto o Parágrafo já existente, e adiciona o parágrafo novo como filho do elemento ainda presente na pilha, o Dispositivo de Artigo, e também o adiciona esse novo Parágrafo na pilha.
 
 ```
-
+Normativa
+└── Agrupador de Capítulo
+    └── Agrupador de Sessão
+        └── Dispositivo de Artigo
+            ├── Dispositivo de Parágrafo
+            │   └── Dispositivo de Inciso
+            └── Dispositivo de Parágrafo
 ```
 
-AAAAAAAAAA
+Por fim, para o processamento do Agrupador de Sessão, o Estruturador nota que Agrupadores não podem ser filhos de Dispositivos, e que já existe outro agrupador de Sessão na pilha, então, de forma similar ao passo anterior, ele remove da pilha todos os elementos até chegar no Agrupador de Capítulo, e adiciona o último Agrupador de Sessão na pilha. O resultado final é dado abaixo.
 
 ```
-
+Normativa
+└── Agrupador de Capítulo
+    ├── Agrupador de Sessão
+    │   └── Dispositivo de Artigo
+    │       ├── Dispositivo de Parágrafo
+    │       │   └── Dispositivo de Inciso
+    │       └── Dispositivo de Parágrafo
+    └── Agrupador de Sessão
 ```
 
-Observa-se que o Estruturador não precisa levar em consideração a ordem esperada dos vários tipos de dispositivos (artigo, paragrafo, inciso, item) ou de agrupadores (livro, capítulo, seção), o que tem a vantagem de simplificar o código, não tornar a estruturação rígida, e manter a possibilidade de se representar normas formatadas fora do padrão usual. Além disso, quando um elemento não pode ser inserido na árvore sem violar alguma das regras supracitadas, ele provavelmente se trata de um trecho problemático da norma ou algum artefato do documento, como uma numeração de páginas em um PDF, e pode ser descartado sem grandes perdas.
+Observa-se que o Estruturador não precisa necessariamente levar em consideração a ordem esperada dos vários tipos de dispositivos (artigo, paragrafo, inciso, item) ou de agrupadores (livro, capítulo, seção), o que tem a vantagem de simplificar o código, não tornar a estruturação rígida, e manter a possibilidade de se representar normas formatadas fora do padrão usual. Além disso, quando um elemento não pode ser inserido na árvore sem violar alguma das regras supracitadas, ele provavelmente se trata de um trecho problemático da norma ou algum artefato do documento, como uma numeração de páginas em um PDF, e pode ser descartado sem grandes perdas.
 
 Para fins de melhoria na qualidade de dados, alguns processamentos extras são feitos. Por exemplo, alguns segmentos descartados sumariamente nesta etapa, como os classificados como "Lixo" ou "Desconhecido". Segmentos dentro de anexos, mesmo que contenham dispositivos legais, atualmente também são descartados, já que necessitariam de uma lógica mais robusta para identificar se eles formam uma norma bem comportada, afim de não adicionar ruído no resultado final. O Estruturador também tenta fundir os textos presentes em sequências de segmentos de "continuação", e remove os trechos entre parênteses que ocorrem no final dos dispositivos, que ainda são salvos como uma "nota de status" daquele dispositivo. Essas notas tipicamente indicam qual outro normativo alterou aquele trecho.
 
@@ -140,18 +155,43 @@ O resultado final da estruturação pode ser salvo num arquivo usando o conhecid
 
 ## Classificação Textual dos Dispositivos
 
-Art. 39. O operador deverá realizar o tratamento segundo as instruções fornecidas pelo controlador, que verificará a observância das próprias instruções e das normas sobre a matéria.
+O objetivo inicial do projeto era realizar uma classificação dos artigos de diversas normativas utilizando grandes modelos de linguagem (LLMs), de acordo com a presença ou ausência de algumas dimensões relevantes para o projeto. Porém, ao se observar a dificuldade de isolar os artigos nos mais diversos formatos de arquivos; tratar dispositivos que modificam outras normativas, uma situação bastante presente do corpus das normativas de interesse; e que em alguns casos, utilizar somente o caput do artigo poderia ter muito pouca informação, acreditou-se interessante construir uma solução mais robusta para facilitar o pré processamento das normas.
 
+Vide o exemplo deste artigo:
+
+```
+Art. 39. O operador deverá realizar o tratamento segundo as instruções fornecidas pelo controlador, que verificará a observância das próprias instruções e das normas sobre a matéria.
+```
+
+Mesmo numa leitura humana, somente o caput da lei trás muito pouca informação sobre o contexto da lei, especialmente quando se está interessado em realizar uma análise textual. O leitor deveria ter conhecimento pretérito de que esse trecho trata de conceitos presentes na Lei Geral de Proteção de Dados Pessoais para realizar uma avaliação adequada. Entretanto, quando adiciona-se informações contextuais, como abaixo as presentes no exemplo abaixo, esse problema podem ser mitigados: pela ementa da lei, é possível saber que se trata da LGPD, e as denominações do Capítulo e da Seção informam que controladores e operadores são espécies de agentes de tratamento de dados pessoais.
+
+```
 LEI Nº 13.709, DE 14 DE AGOSTO DE 2018
 Ementa: Lei Geral de Proteção de Dados Pessoais (LGPD).
+
 CAPÍTULO VI - DOS AGENTES DE TRATAMENTO DE DADOS PESSOAIS
 Seção I - Do Controlador e do Operador
 
-## Uso de LLMs
+Art. 39. O operador deverá realizar o tratamento segundo as instruções fornecidas pelo controlador, que verificará a observância das próprias instruções e das normas sobre a matéria.
+```
+
+Tendo as normativas estruturadas na forma dada na seção acima "Estruturação dos Segmentos", é possível criar representações textuais com informações arbitrárias de qualquer ponto das normativas. No caso desse projeto, optou-se por usar os artigos como unidade de análise, porém também seria possível utilizar qualquer outra unidade, como agrupamentos inteiros, ou ate construir a unidade de observação de forma dinâmica de acordo com o tamanho dos dispositivos.
+
+Neste projeto, utilizou-se o algoritmo clássico de busca em profundidade para localizar os artigos nas normativas já estruturadas. Então, se criou uma representação textual do artigo utilizando toda sua sequencia de elementos ascendentes diretos (tipicamente a normativa, junto com sua ementa, e a sequencia de agrupadores) e todos os seus elementos descendentes (outros dispositivos, blocos de alteração e seus filhos). O resultado final é similar ao exemplo anterior da LGPD.
+
+Tendo a representação textual contextualizada de cada artigo, junto com instruções extras para realizar as classificações, utilizou-se de uma LLM isso, aproveitando a funcionalidade de "decodificação estruturada", que obriga a resposta da LLM ter um formato específico. Os resultados então são salvos num banco de dados durante o processamento para análise posterior.
 
 ## Desenvolvimento
 
+Durante o desenvolvimento da solução, houveram tentativas de se utilizar LLMs em todo o processamento do corpus normativo, especialmente nas etapas de segmentação e estruturação, porém devido a alucinações sofridas pelo modelo de linguagem, o resultado não foi considerado como confiável e a abordagem foi descontinuada.
+
+LLMs também foram utilizadas para avaliar os resultados parciais das fases de segmentação e estruturação, identificando resultados anômalos. Seu uso se revelou bastante útil em corpus com várias normativas grandes, o que impediria a avaliação humana minunciosa.
+
+Outro aprendizado relevante foi sobre o uso da técnica de "snapshot testing", na qual o resultado atual do processamento é comparado com uma nova versão proposta. Um pequeno utilitário foi feito para avaliar o processo de segmentação, pois esta é a etapa mais crítica do processamento, já que propaga erros para o estruturador. A técnica se se provou de muita valia, já que torna possível realizar melhorias incrementais nos resultados e com a certeza de que não houveram regressões nos demais casos.
+
 ## Limitações e trabalhos futuros
+
+Como o projeto tinha inicialmente um escopo muito específico, algumas normativas importantes do ordenamento jurídico brasileiro ainda não foram testadas.
 
 - Identificação de referências
 - Resolução de referências
