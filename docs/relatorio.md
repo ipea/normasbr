@@ -1,5 +1,7 @@
 # Relatório
 
+> Este relatório foi escrito num editor de texto com corretor ortográfico e sem assistência de LLMs.
+
 ## Resumo
 
 Este relatório descreve o funcionamento do pacote Python `normasbr` para estruturação de textos normativos brasileiros nos mais diversos formatos. Seu objetivo é processar os textos das normas afim de se criar uma detalhada representação hierárquica delas, para então realizar outras análises, como classificação ou agrupamento de dispositivos, e permitindo que o usuário consiga utilizar a melhor representação para auxiliar em sua análise.
@@ -45,18 +47,50 @@ Tendo os segmentos parcialmente classificados, o Segmentador agora utiliza as ch
 
 ### Estruturação dos Segmentos
 
-#TODO: Terminar
-
 Com os segmentos já classificados, a etapa seguinte consiste em processá-los de forma a reconstruir a estrutura hierárquica das normas. Esta etapa seria similar à análise sintática dos compiladores.
 
-O Estruturador tenta construir tal hierarquia baseado na sequência de segmentos, levando em consideração suas classificações e as regras de hierarquias entre os tipos. Um nó Por exemplo, um dispositivo pode conter outros dispositivos.
+O Estruturador tenta construir tal hierarquia convertendo a sequência de segmentos numa árvore hierárquica com elementos próprios, levando em consideração as classificações e as regras de composição dos vários tipos de elementos. A saber, existem atualmente as seguintes categorias de elementos: Normativa, Ementa, Agrupador, Dispositivo, Pena, Alteração de Ementa, Alteração de Agrupador, Alteração de Dispositivo, Bloco de Alteração, Agrupador para Contexto de Alteração e Dispositivo para Contexto de Alteração.
 
-Inúmeros segmentos são descartados nesta etapa, como os classificados como "Lixo", "Desconhecido",.
+Cada categoria de elementos mencionada acima pode ser compreendida em dois grupos: os elementos intermediários e os elementos finais. Elementos intermediários, como Normativas, Agrupadores, ou Dispositivos, podem conter outros elementos intermediários ou elementos finais. Já os elementos finais, como Ementas, Pena, Alteração de Agrupador, não podem conter elementos filhos. Tal lógica de elementos intermediários e finais, junto com restrições extras sobre quais categorias de elementos podem ser compostos com quais outras, e o uso da estrutura de dados "stack" (pilha), formam o núcleo lógico do Estruturador.
 
-Segmentos dentro de anexos atualmente são descartados. O Estruturador também não leva em consideração a hierarquia natural dos dispositivos, ele pode considerar que artigos vem antes de incisos ou parágrafos, o que tem a vantagem de permitir que .
-O Estruturador também tenta fundir os textos presentes em sequências de "continuação".
+TODO: TERMINAR EXEMPLO!!
 
-O resultado final da estruturação pode ser serializado como um arquivo no formato `yaml`, como no exemplo abaixo.
+Para exemplificar o funcionamento do Estruturador, considera-se que já exista na pilha de elementos processados: uma Normativa, um Agrupador de Capítulo, um Agrupador de Sessão, um Dispositivo de Artigo e um Dispositivo de Parágrafo. Os próximos elemento a serem processado serão um Dispositivo de Inciso, um Dispositivo de Parágrafo e um Agrupador de Sessão.
+
+A estrutura atual pode ser visualizada assim:
+
+```
+Pilha:
+
+Normativa
+ └── Agrupador de Capítulo
+  └──
+└──
+```
+
+Ao tentar processar o inciso, o Estruturador observa: que o último elemento na pilha é um Parágrafo, que Dispositivos podem ser filhos de outros Dispositivos, e que não existe outro Dispositivo de Inciso atualmente na pilha. Com isso, ele toma a decisão de incluir o inciso como um elemento filho do parágrafo e adiciona esse inciso na pilha.
+
+```
+
+```
+
+No processamento do elemento seguinte, um Dispositivo de Parágrafo, o Estruturador observa uma situação bem similar à anterior, entretanto já existe outro Dispositivo de Parágrafo na pilha. Ele então remove da pilha tanto o Inciso quanto o Parágrafo já existente, adicionando o parágrafo novo como filho do elemento anterior, o Dispositivo de Artigo, e também o adiciona o novo Parágrafo na pilha.
+
+```
+
+```
+
+AAAAAAAAAA
+
+```
+
+```
+
+Observa-se que o Estruturador não precisa levar em consideração a ordem esperada dos vários tipos de dispositivos (artigo, paragrafo, inciso, item) ou de agrupadores (livro, capítulo, seção), o que tem a vantagem de simplificar o código, não tornar a estruturação rígida, e manter a possibilidade de se representar normas formatadas fora do padrão usual. Além disso, quando um elemento não pode ser inserido na árvore sem violar alguma das regras supracitadas, ele provavelmente se trata de um trecho problemático da norma ou algum artefato do documento, como uma numeração de páginas em um PDF, e pode ser descartado sem grandes perdas.
+
+Para fins de melhoria na qualidade de dados, alguns processamentos extras são feitos. Por exemplo, alguns segmentos descartados sumariamente nesta etapa, como os classificados como "Lixo" ou "Desconhecido". Segmentos dentro de anexos, mesmo que contenham dispositivos legais, atualmente também são descartados, já que necessitariam de uma lógica mais robusta para identificar se eles formam uma norma bem comportada, afim de não adicionar ruído no resultado final. O Estruturador também tenta fundir os textos presentes em sequências de segmentos de "continuação", e remove os trechos entre parênteses que ocorrem no final dos dispositivos, que ainda são salvos como uma "nota de status" daquele dispositivo. Essas notas tipicamente indicam qual outro normativo alterou aquele trecho.
+
+O resultado final da estruturação pode ser salvo num arquivo usando o conhecido formato textual `yaml`, para uma fácil visualização humana e manipulação por máquina. Vide o exemplo abaixo do formato `yaml`.
 
 ```yaml
 - classe: norma
@@ -104,10 +138,23 @@ O resultado final da estruturação pode ser serializado como um arquivo no form
                 temática.
 ```
 
-## Abordagem da Classificação dos Dispositivos
+## Classificação Textual dos Dispositivos
+
+Art. 39. O operador deverá realizar o tratamento segundo as instruções fornecidas pelo controlador, que verificará a observância das próprias instruções e das normas sobre a matéria.
+
+LEI Nº 13.709, DE 14 DE AGOSTO DE 2018
+Ementa: Lei Geral de Proteção de Dados Pessoais (LGPD).
+CAPÍTULO VI - DOS AGENTES DE TRATAMENTO DE DADOS PESSOAIS
+Seção I - Do Controlador e do Operador
 
 ## Uso de LLMs
 
 ## Desenvolvimento
 
-## Limitações
+## Limitações e trabalhos futuros
+
+- Identificação de referências
+- Resolução de referências
+- Uso de um id canônico
+- Heurística de qualidade de norma
+- Uso de algoritmo determinístico vs probabilístico
