@@ -195,7 +195,7 @@ Como o projeto tinha inicialmente um escopo muito específico, algumas normativa
 
 Este projeto visa ser utilizado também para estudar normativas secundárias, que podem ser materializadas das mais diversas formas, especialmente como PDFs. Entretanto, o formato foi pensado para publicações, e não edição ou leitura do texto subjacente por máquina. Um esforço foi feito para se concatenar as linhas contíguas que parem ser continuações, remover artefatos como numeração de página, cabeçalhos e epílogos típicos, entretanto esse processamento pode ser problemático. Textos de normativas secundárias diversas podem ser incompatíveis com algumas das heurísticas utilizadas atualmente. Por exemplo, uma resolução de um órgão colegiado feita pelo SEI e publicada em PDF poderá ter uma estrutura no preambulo muito diferente da que geralmente se usa em leis e decretos. Como as heurísticas foram feitas baseando-se principalmente nesses casos, elas podem não identificar as âncoras textuais necessárias, como palavras-chave, no texto da mencionada resolução e sua estruturação ficar prejudicada em algum ponto.
 
-O esquema de identificação de normas revogadas ainda é precário, se baseando somente no fato do texto original estar tachado ou não, verificando uma característica simplória do HTML original. Então, essa marcação não deve ser relavada em consideração por enquanto.
+O esquema de identificação de normas revogadas ainda é precário, se baseando somente no fato do texto original estar tachado ou não, por meio de uma característica simplória do HTML original. Então, essa marcação não deve ser levada em consideração por enquanto.
 
 A identificação de ementas e preâmbulos é um ponto fraco. Não existem palavras-chave claras sempre, ou uma posição específica no texto para ajudar a ancorar sua identificação. Seria necessário realizar um julgamento semântico dos textos para aumentar a qualidade dessa seleção.
 
@@ -205,9 +205,9 @@ Outro ponto de atenção do módulo Python é que se observa que os componentes 
 
 O módulo Python foi majoritariamente escrito de forma manual pelo autor. O uso de LLMs no desenvolvimento foi esporádico, auxiliando na construção de alguns trechos e na escrita dos testes automatizados. Logo, tais trechos devem ser revistos no futuro, mas o risco de problemas sistêmicos ou [débito cognitivo](https://www.thoughtworks.com/en-br/radar/techniques/codebase-cognitive-debt) em relação ao uso de LLMs é baixo.
 
-- Identificação de referências
-- Resolução de referências
-- Uso de um id canônico
+Como ideias de contribuições futuras, observa-se que a norma estruturada poderia ser enriquecida com informações sobre as referências que um dispositivo faz para outro dispositivo ou normativa, como em "§ 2º Os contratos e convênios de que trata o § 1º deste artigo deverão ser comunicados à autoridade nacional". Atualmente, dispositivos que possuem links são marcados como tal num atributo específico para isso, sendo uma versão inicial dessa funcionalidade. Tal informação seria interessante para análises gráficas das matérias ou até para aprimorar uma representação textual dos dispositivos para um processamento posterior, aumentando o contexto fornecido com o próprio corpo do § 1º, como no caso acima.
+
+A fim de realizar a proposta acima, ainda é necessário criar um sistema de identificação dos dispositivos e das próprias normas, criando uma identidade única para ambos. Além disso, precisa-se atribuir tal identidade para cada referência feita pelos dispositivos, seja ela interna a própria norma ou externa.
 
 - Leitura do Anexo
 - Heurística de qualidade de norma.
