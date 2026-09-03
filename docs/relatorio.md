@@ -183,18 +183,31 @@ Tendo a representação textual contextualizada de cada artigo, junto com instru
 
 ## Desenvolvimento
 
-Durante o desenvolvimento da solução, houveram tentativas de se utilizar LLMs em todo o processamento do corpus normativo, especialmente nas etapas de segmentação e estruturação, porém devido a alucinações sofridas pelo modelo de linguagem, o resultado não foi considerado como confiável e a abordagem foi descontinuada.
+Durante o desenvolvimento da solução, houveram tentativas de se utilizar LLMs em todo o processamento do corpus normativo, especialmente nas etapas de segmentação e estruturação, porém devido às alucinações sofridas pelo modelo de linguagem, o resultado não foi considerado como confiável e a abordagem foi descontinuada.
 
-LLMs também foram utilizadas para avaliar os resultados parciais das fases de segmentação e estruturação, identificando resultados anômalos. Seu uso se revelou bastante útil em corpus com várias normativas grandes, o que impediria a avaliação humana minunciosa.
+LLMs também foram utilizadas para avaliar os resultados das fases de segmentação e estruturação, identificando resultados anômalos. Seu uso se revelou bastante útil em corpus com muitas normativas, ou alguma normativa maior, o que impediria a avaliação humana minuciosa.
 
-Outro aprendizado relevante foi sobre o uso da técnica de "snapshot testing", na qual o resultado atual do processamento é comparado com uma nova versão proposta. Um pequeno utilitário foi feito para avaliar o processo de segmentação, pois esta é a etapa mais crítica do processamento, já que propaga erros para o estruturador. A técnica se se provou de muita valia, já que torna possível realizar melhorias incrementais nos resultados e com a certeza de que não houveram regressões nos demais casos.
+Outro aprendizado relevante foi sobre o uso da técnica de "snapshot testing", na qual o resultado atual do processamento é comparado com uma nova versão proposta. Um pequeno utilitário foi feito para avaliar o processo de segmentação, realçando as diferenças entre as versões. Essa é a etapa mais crítica do processamento, pois envolve muitas heurísticas para realizar as classificações dos segmento, e esses erros podem ser propagados para o estruturador. A técnica se provou de muita valia, pois torna possível realizar melhorias incrementais nos resultados tendo a certeza de que não houveram regressões nos demais casos.
 
 ## Limitações e trabalhos futuros
 
-Como o projeto tinha inicialmente um escopo muito específico, algumas normativas importantes do ordenamento jurídico brasileiro ainda não foram testadas.
+Como o projeto tinha inicialmente um escopo muito específico, algumas normativas importantes do ordenamento jurídico brasileiro ainda não foram testadas. Acredita-se que o sistema funcione bem para leis mais recentes, especialmente após a [lei complementar 95 de 1998](https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp95.htm), por serem mais padronizadas e seguirem uma técnica de escrita legislativa mais restrita. Normas mais antigas como o Decreto-Lei 200 ainda funcionam, mas apresentam alguns problemas.
+
+Este projeto visa ser utilizado também para estudar normativas secundárias, que podem ser materializadas das mais diversas formas, especialmente como PDFs. Entretanto, o formato foi pensado para publicações, e não edição ou leitura do texto subjacente por máquina. Um esforço foi feito para se concatenar as linhas contíguas que parem ser continuações, remover artefatos como numeração de página, cabeçalhos e epílogos típicos, entretanto esse processamento pode ser problemático. Textos de normativas secundárias diversas podem ser incompatíveis com algumas das heurísticas utilizadas atualmente. Por exemplo, uma resolução de um órgão colegiado feita pelo SEI e publicada em PDF poderá ter uma estrutura no preambulo muito diferente da que geralmente se usa em leis e decretos. Como as heurísticas foram feitas baseando-se principalmente nesses casos, elas podem não identificar as âncoras textuais necessárias, como palavras-chave, no texto da mencionada resolução e sua estruturação ficar prejudicada em algum ponto.
+
+O esquema de identificação de normas revogadas ainda é precário, se baseando somente no fato do texto original estar tachado ou não, verificando uma característica simplória do HTML original. Então, essa marcação não deve ser relavada em consideração por enquanto.
+
+A identificação de ementas e preâmbulos é um ponto fraco. Não existem palavras-chave claras sempre, ou uma posição específica no texto para ajudar a ancorar sua identificação. Seria necessário realizar um julgamento semântico dos textos para aumentar a qualidade dessa seleção.
+
+O código atualmente se baseia somente em heurísticas determinísticas para fazer seu processamento, o que lhe garante um alto grau de reprodutibilidade e interpretabilidade de seus resultados, entretanto pode dificultar sua capacidade de generalização para casos mais adversos, como das supramencionadas identificações de ementas e preâmbulos. O uso de técnicas probabilísticas como aprendizado de máquina ou modelos de linguagem poderiam resolver melhor esses casos difíceis, ao custo talvez piorar a reprodutibilidade e interpretabilidade, além de talvez requerer mais poder computacional do usuário final. Uma abordagem híbrida pode ser salutar.
+
+Outro ponto de atenção do módulo Python é que se observa que os componentes de segmentação e estruturação estão com lógicas complexas e muito acopladas internamente, o que dificulta sua compreensão e manutenção. Uma readequação da arquitetura, criando novas abstrações para esses componentes afim de simplificá-los, pode ser necessária para facilitar sua manutenção e extensibilidade num horizonte de tempo maior.
+
+O módulo Python foi majoritariamente escrito de forma manual pelo autor. O uso de LLMs no desenvolvimento foi esporádico, auxiliando na construção de alguns trechos e na escrita dos testes automatizados. Logo, tais trechos devem ser revistos no futuro, mas o risco de problemas sistêmicos ou [débito cognitivo](https://www.thoughtworks.com/en-br/radar/techniques/codebase-cognitive-debt) em relação ao uso de LLMs é baixo.
 
 - Identificação de referências
 - Resolução de referências
 - Uso de um id canônico
-- Heurística de qualidade de norma
-- Uso de algoritmo determinístico vs probabilístico
+
+- Leitura do Anexo
+- Heurística de qualidade de norma.
