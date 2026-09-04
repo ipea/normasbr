@@ -4,11 +4,11 @@
 
 ## Resumo
 
-Este relatório descreve o funcionamento do pacote Python `normasbr` para estruturação de textos normativos brasileiros nos mais diversos formatos. Seu objetivo é processar os textos das normas afim de se criar uma detalhada representação hierárquica delas, para então realizar outras análises, como classificação ou agrupamento de dispositivos, e permitindo que o usuário consiga utilizar a melhor representação para auxiliar em sua análise.
+Este relatório descreve o funcionamento do pacote Python `normasbr` para estruturação de textos normativos brasileiros nos mais diversos formatos. Seu objetivo é processar os textos das normas a fim de se criar uma detalhada representação hierárquica delas, para então realizar outras análises, como classificação ou agrupamento de dispositivos, e permitindo que o usuário consiga utilizar a melhor representação para auxiliar em sua análise.
 
 ## Motivação
 
-Com o objetivo inicial de realizar classificações textuais dos artigos de diversas normativas brasileiras, desde trechos da constituição federal até portarias ministeriais publicadas no Diário Oficial da União, foi realizada uma segmentação "ad hoc" de seus artigos, baseada somente em palavras-chave. Entretanto, notou-se que tal segmentação simplificada deixava a desejar, além de não manter contexto suficiente para se realizar a classificação adequadamente em alguns casos, especialmente quando os artigos são muito sucintos. Além disso, algumas normativas são disponibilizadas somente em formato PDF, que não é facilmente convertido para texto bruto, além de possuir diversos elementos que não fazem parte do corpo principal do documento, como cabeçalhos, número da paginas etc. Tais elementos adicionam ruídos e podem atrapalhar etapas posteriores da análise.
+Com o objetivo inicial de realizar classificações textuais dos artigos de diversas normativas brasileiras, desde trechos da constituição federal até portarias ministeriais publicadas no Diário Oficial da União, foi realizada uma segmentação "ad hoc" de seus artigos, baseada somente em palavras-chave. Entretanto, notou-se que tal segmentação simplificada era suficiente, além de não manter contexto suficiente para se realizar a classificação adequadamente em alguns casos, especialmente quando os artigos são muito sucintos. Além disso, algumas normativas são disponibilizadas somente em formato PDF, que não é facilmente convertido para texto bruto, além de possuir diversos elementos que não fazem parte do corpo principal do documento, como cabeçalhos, número da páginas etc. Tais elementos adicionam ruídos e podem atrapalhar etapas posteriores da análise.
 
 Para se superar tais desafios, foi desenvolvido um pacote em Python que busca fazer o tratamento das normativas de forma robusta nos mais diversos formatos de arquivos, gerando como resultado uma estrutura hierárquica facilmente manipulável por código, na qual o usuário é capaz de facilmente obter as informações necessárias para as etapas subsequentes que desejar fazer.
 
@@ -31,19 +31,19 @@ Para se converter os formatos `pdfs` e `docx`, foram usadas, respectivamente, as
 
 ### Extração de Blocos
 
-A extração de blocos consiste em coletar, do HTML gerado na etapa anterior, os trechos de texto que serão usados nos processamentos posteriores, mantendo algumas informações de formatação que pode ser úteis, por exemplo, quando o texto está tachado, o que é um indício de um dispositivo revogado. Esta etapa ainda tenta corrigir alguns problemas comuns encontrados nos HTMLs do [planalto.gov.br](planalto.gov.br), como tags mal formatadas.
+A extração de blocos consiste em coletar, do HTML gerado na etapa anterior, os trechos de texto que serão usados nos processamentos posteriores, mantendo algumas informações de formatação que podem ser úteis, por exemplo, quando o texto está tachado, o que é um indício de um dispositivo revogado. Esta etapa ainda tenta corrigir alguns problemas comuns encontrados nos HTMLs do [planalto.gov.br](planalto.gov.br), como tags mal formatadas.
 
 ### Segmentador de Blocos
 
 Ao receber os blocos da etapa anterior, o segmentador é responsável por separar os blocos em unidades atômicas e classificá-las em categorias predeterminadas. Na analogia com compiladores de linguagens de programação, esta etapa seria a análise léxica, ou "tokenização".
 
-As categorias usadas para classificar os blocos foram baseadas tanto em diversas normativas testadas, quanto no [Glossário e técnica legislativa do Congresso Nacional](https://www.congressonacional.leg.br/legislacao-e-publicacoes/glossario-tecnica-legislativa). Até a escrita deste relatório, existem as seguintes categorias: desconhecido, titulo da normativa, inicio do bloco de alteração, considerando, artigo, paragrafo, inciso, alineá, item, ementa, continuação, enumeração, fim do bloco de alteração, preambulo, campo vide, agrupador, denominação do agrupador, omissis, titulo da autoridade, inicio do anexo, data, lixo, local origem, texto anexo, nome autoridade, nome penal, pena, fundamento legal.
+As categorias usadas para classificar os blocos foram baseadas tanto em diversas normativas testadas, quanto no [Glossário e técnica legislativa do Congresso Nacional](https://www.congressonacional.leg.br/legislacao-e-publicacoes/glossario-tecnica-legislativa). Até a escrita deste relatório, existem as seguintes categorias: desconhecido, título da normativa, início do bloco de alteração, considerando, artigo, paragrafo, inciso, alínea, item, ementa, continuação, enumeração, fim do bloco de alteração, preambulo, campo vide, agrupador, denominação do agrupador, omissis, título da autoridade, início do anexo, data, lixo, local origem, texto anexo, nome autoridade, nome penal, pena, fundamento legal.
 
 Tipicamente, o Segmentador considera cada bloco recebido da etapa anterior, Extração de Blocos, como um segmento. As únicas exceções atuais são a abertura e o fechamento de blocos de alteração, identificados pela presença de aspas em determinadas posições, que são separadas em segmentos próprios.
 
-Após a identificação dos segmentos, o segmentador tenta classificá-las nas categorias supramencionadas, valendo-se de dois componentes chamados Regras e Heurísticas. As Regras são a primeira etapa, elas consistem de uma expressão regular e a sua categoria. Quando a expressão regular casa com o texto do segmento atual, o segmento recebe a classificação informada pela Regra, e ignora as demais regras. Os segmentos que não casaram nenhuma vez são categorizados como "desconhecido". Um exemplo de Regra poderia ser descrito como: se o texto do bloco começa com "Parágrafo único" ou "§", então o bloco é classificado como "parágrafo".
+Após a identificação dos segmentos, o segmentador tenta classificá-las nas categorias supramencionadas, valendo-se de dois componentes chamados Regras e Heurísticas. As Regras são a primeira etapa, elas consistem em uma expressão regular e a sua categoria. Quando a expressão regular casa com o texto do segmento atual, o segmento recebe a classificação informada pela Regra, e ignora as demais regras. Os segmentos que não casaram nenhuma vez são categorizados como "desconhecido". Um exemplo de Regra poderia ser descrito como: se o texto do bloco começa com "Parágrafo único" ou "§", então o bloco é classificado como "parágrafo".
 
-Tendo os segmentos parcialmente classificados, o Segmentador agora utiliza as chamadas Heurísticas para aprimorar as categorizações já feitas. Elas utilizam lógicas mais complexas, levando em consideração toda a sequência de blocos para realizar a tarefa. Alguns exemplos de heurísticas são: quando que títulos de normas aparecem mais de uma vez, classificar as ocorrências seguintes como "lixo", já que provavelmente tratam-se do cabeçalho do documento; quando um bloco "desconhecido" estiver depois de um título de normativa e antes dos blocos classificados como "preâmbulo", "campo vide" e "considerando", classificá-lo como "ementa".
+Tendo os segmentos parcialmente classificados, o Segmentador agora utiliza as chamadas Heurísticas para aprimorar as categorizações já feitas. Elas utilizam lógicas mais complexas, levando em consideração toda a sequência de blocos para realizar a tarefa. Alguns exemplos de heurísticas são: quando que títulos de normas aparecem mais de uma vez, classificar as ocorrências seguintes como "lixo", já que provavelmente trata-se do cabeçalho do documento; quando um bloco "desconhecido" estiver depois de um título de normativa e antes dos blocos classificados como "preâmbulo", "campo vide" e "considerando", classificá-lo como "ementa".
 
 ### Estruturação dos Segmentos
 
@@ -76,7 +76,7 @@ Normativa
                 └── Dispositivo de Inciso
 ```
 
-No processamento do elemento seguinte, um Dispositivo de Parágrafo, o Estruturador observa uma situação bem similar à anterior, entretanto já existe outro Dispositivo de Parágrafo na pilha. Ele então remove da pilha tanto o Inciso quanto o Parágrafo já existente, e adiciona o parágrafo novo como filho do elemento ainda presente na pilha, o Dispositivo de Artigo, e também o adiciona esse novo Parágrafo na pilha.
+No processamento do elemento seguinte, um Dispositivo de Parágrafo, o Estruturador observa uma situação bem similar à anterior, entretanto já existe outro Dispositivo de Parágrafo na pilha. Ele então remove da pilha tanto o Inciso quanto o Parágrafo já existente, e adiciona o parágrafo novo como filho do elemento ainda presente na pilha, o Dispositivo de Artigo, e o adiciona esse novo Parágrafo na pilha.
 
 ```
 Normativa
@@ -88,7 +88,7 @@ Normativa
             └── Dispositivo de Parágrafo
 ```
 
-Por fim, para o processamento do Agrupador de Sessão, o Estruturador nota que Agrupadores não podem ser filhos de Dispositivos, e que já existe outro agrupador de Sessão na pilha, então, de forma similar ao passo anterior, ele remove da pilha todos os elementos até chegar no Agrupador de Capítulo, e adiciona o último Agrupador de Sessão na pilha. O resultado final é dado abaixo.
+Por fim, para o processamento do Agrupador de Sessão, o Estruturador nota que Agrupadores não podem ser filhos de Dispositivos, e que já existe outro agrupador de Sessão na pilha, então, de forma similar ao passo anterior, ele remove da pilha todos os elementos até chegar no Agrupador de Capítulo, e adiciona o último Agrupador de Sessão na pilha. O resultado é dado abaixo.
 
 ```
 Normativa
@@ -103,9 +103,9 @@ Normativa
 
 Observa-se que o Estruturador não precisa necessariamente levar em consideração a ordem esperada dos vários tipos de dispositivos (artigo, paragrafo, inciso, item) ou de agrupadores (livro, capítulo, seção), o que tem a vantagem de simplificar o código, não tornar a estruturação rígida, e manter a possibilidade de se representar normas formatadas fora do padrão usual. Além disso, quando um elemento não pode ser inserido na árvore sem violar alguma das regras supracitadas, ele provavelmente se trata de um trecho problemático da norma ou algum artefato do documento, como uma numeração de páginas em um PDF, e pode ser descartado sem grandes perdas.
 
-Para fins de melhoria na qualidade de dados, alguns processamentos extras são feitos. Por exemplo, alguns segmentos descartados sumariamente nesta etapa, como os classificados como "Lixo" ou "Desconhecido". Segmentos dentro de anexos, mesmo que contenham dispositivos legais, atualmente também são descartados, já que necessitariam de uma lógica mais robusta para identificar se eles formam uma norma bem comportada, afim de não adicionar ruído no resultado final. O Estruturador também tenta fundir os textos presentes em sequências de segmentos de "continuação", e remove os trechos entre parênteses que ocorrem no final dos dispositivos, que ainda são salvos como uma "nota de status" daquele dispositivo. Essas notas tipicamente indicam qual outro normativo alterou aquele trecho.
+Para fins de melhoria na qualidade de dados, alguns processamentos extras são feitos. Por exemplo, alguns segmentos descartados sumariamente nesta etapa, como os classificados como "Lixo" ou "Desconhecido". Segmentos dentro de anexos, mesmo que contenham dispositivos legais, atualmente também são descartados, já que necessitariam de uma lógica mais robusta para identificar se eles formam uma norma bem-comportada, a fim de não adicionar ruído no resultado. O Estruturador também tenta fundir os textos presentes em sequências de segmentos de "continuação", e remove os trechos entre parênteses que ocorrem no final dos dispositivos, que ainda são salvos como uma "nota de status" daquele dispositivo. Essas notas tipicamente indicam qual outro normativo alterou aquele trecho.
 
-O resultado final da estruturação pode ser salvo num arquivo usando o conhecido formato textual `yaml`, para uma fácil visualização humana e manipulação por máquina. Vide o exemplo abaixo do formato `yaml`.
+O resultado da estruturação pode ser salvo num arquivo usando o conhecido formato textual `yaml`, para uma fácil visualização humana e manipulação por máquina. Vide o exemplo abaixo do formato `yaml`.
 
 ```yaml
 - classe: norma
@@ -163,7 +163,7 @@ Vide o exemplo deste artigo:
 Art. 39. O operador deverá realizar o tratamento segundo as instruções fornecidas pelo controlador, que verificará a observância das próprias instruções e das normas sobre a matéria.
 ```
 
-Mesmo numa leitura humana, somente o caput da lei trás muito pouca informação sobre o contexto da lei, especialmente quando se está interessado em realizar uma análise textual. O leitor deveria ter conhecimento pretérito de que esse trecho trata de conceitos presentes na Lei Geral de Proteção de Dados Pessoais para realizar uma avaliação adequada. Entretanto, quando adiciona-se informações contextuais, como abaixo as presentes no exemplo abaixo, esse problema podem ser mitigados: pela ementa da lei, é possível saber que se trata da LGPD, e as denominações do Capítulo e da Seção informam que controladores e operadores são espécies de agentes de tratamento de dados pessoais.
+Mesmo numa leitura humana, somente o caput da lei trás muito pouca informação sobre o contexto da lei, especialmente quando se está interessado em realizar uma análise textual. O leitor deveria ter conhecimento pretérito de que esse trecho trata de conceitos presentes na Lei Geral de Proteção de Dados Pessoais para realizar uma avaliação adequada. Entretanto, quando se adiciona informações contextuais, como as presentes no exemplo abaixo, esse problema pode ser mitigado: pela ementa da lei, é possível saber que se trata da LGPD, e as denominações do Capítulo e da Seção informam que controladores e operadores são espécies de agentes de tratamento de dados pessoais.
 
 ```
 LEI Nº 13.709, DE 14 DE AGOSTO DE 2018
@@ -175,19 +175,19 @@ Seção I - Do Controlador e do Operador
 Art. 39. O operador deverá realizar o tratamento segundo as instruções fornecidas pelo controlador, que verificará a observância das próprias instruções e das normas sobre a matéria.
 ```
 
-Tendo as normativas estruturadas na forma dada na seção acima "Estruturação dos Segmentos", é possível criar representações textuais com informações arbitrárias de qualquer ponto das normativas. No caso desse projeto, optou-se por usar os artigos como unidade de análise, porém também seria possível utilizar qualquer outra unidade, como agrupamentos inteiros, ou ate construir a unidade de observação de forma dinâmica de acordo com o tamanho dos dispositivos.
+Tendo as normativas estruturadas na forma dada na seção acima "Estruturação dos Segmentos", é possível criar representações textuais com informações arbitrárias de qualquer ponto das normativas. No caso desse projeto, optou-se por usar os artigos como unidade de análise, porém também seria possível utilizar qualquer outra unidade, como agrupamentos inteiros, ou até construir a unidade de observação de forma dinâmica de acordo com o tamanho dos dispositivos.
 
-Neste projeto, utilizou-se o algoritmo clássico de busca em profundidade para localizar os artigos nas normativas já estruturadas. Então, se criou uma representação textual do artigo utilizando toda sua sequencia de elementos ascendentes diretos (tipicamente a normativa, junto com sua ementa, e a sequencia de agrupadores) e todos os seus elementos descendentes (outros dispositivos, blocos de alteração e seus filhos). O resultado final é similar ao exemplo anterior da LGPD.
+Neste projeto, utilizou-se o algoritmo clássico de busca em profundidade para localizar os artigos nas normativas já estruturadas. Então, se criou uma representação textual do artigo utilizando toda sua sequência de elementos ascendentes diretos (tipicamente a normativa, junto com sua ementa, e a sequência de agrupadores) e todos os seus elementos descendentes (outros dispositivos, blocos de alteração e seus filhos). O resultado é similar ao exemplo anterior da LGPD.
 
 Tendo a representação textual contextualizada de cada artigo, junto com instruções extras para realizar as classificações, utilizou-se de uma LLM isso, aproveitando a funcionalidade de "decodificação estruturada", que obriga a resposta da LLM ter um formato específico. Os resultados então são salvos num banco de dados durante o processamento para análise posterior.
 
 ## Desenvolvimento
 
-Durante o desenvolvimento da solução, houveram tentativas de se utilizar LLMs em todo o processamento do corpus normativo, especialmente nas etapas de segmentação e estruturação, porém devido às alucinações sofridas pelo modelo de linguagem, o resultado não foi considerado como confiável e a abordagem foi descontinuada.
+Durante o desenvolvimento da solução, houve tentativas de se utilizar LLMs em todo o processamento do corpus normativo, especialmente nas etapas de segmentação e estruturação, porém devido às alucinações sofridas pelo modelo de linguagem, o resultado não foi considerado como confiável e a abordagem foi descontinuada.
 
 LLMs também foram utilizadas para avaliar os resultados das fases de segmentação e estruturação, identificando resultados anômalos. Seu uso se revelou bastante útil em corpus com muitas normativas, ou alguma normativa maior, o que impediria a avaliação humana minuciosa.
 
-Outro aprendizado relevante foi sobre o uso da técnica de "snapshot testing", na qual o resultado atual do processamento é comparado com uma nova versão proposta. Um pequeno utilitário foi feito para avaliar o processo de segmentação, realçando as diferenças entre as versões. Essa é a etapa mais crítica do processamento, pois envolve muitas heurísticas para realizar as classificações dos segmento, e esses erros podem ser propagados para o estruturador. A técnica se provou de muita valia, pois torna possível realizar melhorias incrementais nos resultados tendo a certeza de que não houveram regressões nos demais casos.
+Outro aprendizado relevante foi sobre o uso da técnica de "snapshot testing", na qual o resultado atual do processamento é comparado com uma nova versão proposta. Um pequeno utilitário foi feito para avaliar o processo de segmentação, realçando as diferenças entre as versões. Essa é a etapa mais crítica do processamento, pois envolve muitas heurísticas para realizar as classificações dos segmentos, e esses erros podem ser propagados para o estruturador. A técnica se provou de muita valia, pois torna possível realizar melhorias incrementais nos resultados tendo a certeza de que não houve regressões nos demais casos.
 
 ## Limitações e trabalhos futuros
 
@@ -201,7 +201,7 @@ A identificação de ementas e preâmbulos é um ponto fraco. Não existem palav
 
 O código atualmente se baseia somente em heurísticas determinísticas para fazer seu processamento, o que lhe garante um alto grau de reprodutibilidade e interpretabilidade de seus resultados, entretanto pode dificultar sua capacidade de generalização para casos mais adversos, como das supramencionadas identificações de ementas e preâmbulos. O uso de técnicas probabilísticas como aprendizado de máquina ou modelos de linguagem poderiam resolver melhor esses casos difíceis, ao custo talvez piorar a reprodutibilidade e interpretabilidade, além de talvez requerer mais poder computacional do usuário final. Uma abordagem híbrida pode ser salutar.
 
-Outro ponto de atenção do módulo Python é que se observa que os componentes de segmentação e estruturação estão com lógicas complexas e muito acopladas internamente, o que dificulta sua compreensão e manutenção. Uma readequação da arquitetura, criando novas abstrações para esses componentes afim de simplificá-los, pode ser necessária para facilitar sua manutenção e extensibilidade num horizonte de tempo maior.
+Outro ponto de atenção do módulo Python é que se observa que os componentes de segmentação e estruturação estão com lógicas complexas e muito acopladas internamente, o que dificulta sua compreensão e manutenção. Uma readequação da arquitetura, criando abstrações para esses componentes a fim de simplificá-los, pode ser necessária para facilitar sua manutenção e extensibilidade num horizonte de tempo maior.
 
 O módulo Python foi majoritariamente escrito de forma manual pelo autor. O uso de LLMs no desenvolvimento foi esporádico, auxiliando na construção de alguns trechos e na escrita dos testes automatizados. Logo, tais trechos devem ser revistos no futuro, mas o risco de problemas sistêmicos ou [débito cognitivo](https://www.thoughtworks.com/en-br/radar/techniques/codebase-cognitive-debt) em relação ao uso de LLMs é baixo.
 
