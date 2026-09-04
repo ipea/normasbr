@@ -209,5 +209,4 @@ Como ideias de contribuições futuras, observa-se que a norma estruturada poder
 
 A fim de realizar a proposta acima, ainda é necessário criar um sistema de identificação dos dispositivos e das próprias normas, criando uma identidade única para ambos. Além disso, precisa-se atribuir tal identidade para cada referência feita pelos dispositivos, seja ela interna a própria norma ou externa.
 
-- Leitura do Anexo
-- Heurística de qualidade de norma.
+Atualmente, normas presentes em anexos, como na [Resolução 230 da ANA de 2024](https://www.gov.br/ana/pt-br/legislacao/resolucoes/resolucoes-regulatorias/2024/230), são descartadas, pois o sistema ainda não é capaz de identificar quando um texto é uma normativa ou quando se trata de falsos positivos em modelos de documentos, formulários, ou outras situações comuns nesses anexos. Para resolver tal problema, seria necessário desenvolver um método para avaliar se um dado trecho trata-se de uma normativa legítima ou um mero artefato do processo de segmentação e estruturação dos dados. Tal método também pode ser interessante para se localizar problemas estruturais nas normativas já estruturadas para fins de testes.
