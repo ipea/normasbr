@@ -6,9 +6,11 @@
 
 import json
 import random
+import sqlite3
 import time
 from dataclasses import dataclass
-from typing import Any, Generic, TypeVar
+from pathlib import Path
+from typing import Any, Callable, Generic, TypeVar
 
 import requests
 from pydantic import BaseModel
@@ -27,6 +29,7 @@ class EstruturadorDadosLLM(Generic[T]):
     delay_base_tentativa: int = 5
     timeout_conecao: int = 10
     timeout_resposta: int = 30
+    cache: Path | None = Path.home() / ".cache" / "normasbr.db"
 
     def __call__(self, *args: Any, **kwds: Any) -> T:
         prompt = self.template_prompt.format(*args, **kwds)
@@ -49,15 +52,23 @@ class EstruturadorDadosLLM(Generic[T]):
             },
         }
 
-        resposta = self.__tentar_realizar_request(payload)
-        estruturado_bruto = str(
-            resposta.get("choices", [{}])[0].get("message", {}).get("content", "{}")
-        )
+        if self.cache:
+            resultado_bruto = __cachear_sqlite(
+                self.cache, json.dumps(payload), lambda: self.__obter_resultado(payload)
+            )
+        else:
+            resultado_bruto = self.__obter_resultado(payload)
 
-        return self.estrutura_esperada.model_validate(json.loads(estruturado_bruto))
+        return self.estrutura_esperada.model_validate(json.loads(resultado_bruto))
 
     def obter_json_schema(self):
         return self.__simplificar_schema(self.estrutura_esperada.model_json_schema())
+
+    def __obter_resultado(self, payload: dict[str, Any]) -> str:
+        resposta = self.__tentar_realizar_request(payload)
+        return str(
+            resposta.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+        )
 
     def __tentar_realizar_request(self, payload: dict[str, Any]):
         for tentativa in range(self.n_tentativas):
@@ -119,3 +130,23 @@ class EstruturadorDadosLLM(Generic[T]):
             return [self.__simplificar_schema(v) for v in schema]
 
         return schema
+
+
+def __cachear_sqlite(path: Path, entrada: str, executor: Callable[[], str]):
+    with sqlite3.connect(path) as conn:
+        conn.execute("PRAGMA journal_mode = WAL;")
+        conn.execute(
+            "CREATE TABLE prompt_cache IF NOT EXISTS (id int, entrada text, resultado text);"
+        )
+        res = conn.execute(
+            "SELECT resultado FROM prompt_cache WHERE entrada = ? LIMIT 1;", (entrada)
+        ).fetchone()
+        if res:
+            return res
+
+        res = executor()
+        conn.execute(
+            "INSERT INTO prompt_cache(id, entrada, resultado) VALUES (?, ?, ?);",
+            (time.time_ns(), entrada, res),
+        ).fetchone()
+        return res
