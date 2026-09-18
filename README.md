@@ -120,11 +120,13 @@ normasbr classificar_macrodim normas.yml saida.parquet
 - [ ] Documentação da biblioteca;
 - [ ] Simplificação de uso dos componentes da biblioteca;
 - [ ] Melhorias nos tratamentos de preâmbulo e ementa;
-- [ ] Melhorias no utilitário de classificação de normativas (ex: uso de cache e remoção da dependência do DuckDB);
+- [x] Melhorias no utilitário de classificação de normativas (ex: uso de cache e remoção da dependência do DuckDB);
+  - [ ] Criar utilitário genérico de classificação via CLI
 - [ ] Rearquitetura das heurísticas para maior legibilidade e mantenabilidade;
 - [ ] Reescrita dos trechos feitos por LLM;
 - [ ] Criação de uma heurística para identificar anomalias e pontual a qualidade da estruturação;
-- [ ] Melhorar identificação de normas sem efeito;
+- [x] Melhorar identificação de normas sem efeito;
+  - [ ] Identificar novos casos de normas sem efeito;
 - [ ] Extração de normas dentro de anexos;
 - [ ] Snapshot testing com um corpus diverso de normas;
 - [ ] Identificação de referências;
