@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Callable, Generic, TypeVar
 
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -52,23 +52,31 @@ class EstruturadorDadosLLM(Generic[T]):
             },
         }
 
+        # Como eu preciso salvar no cache duas strings (chave, valor),
+        # e quero salvar o valor bruto para conseguir reparsear caso necessário,
+        # preciso dar essa volta maior de fazer a request, receber o bruto
+        # e parsear o resultado final, mesmo que ele já esteja na resposta da request.
+        # A já chamada embutida feita pelo cache com o callback usa uma única conexão
+        # com o banco e simplifica o processo do próprio cache.
         if self.cache:
-            resultado_bruto = _cachear_sqlite(
-                self.cache, json.dumps(payload), lambda: self.__obter_resultado(payload)
+            resposta_bruta = _cachear_sqlite(
+                self.cache,
+                json.dumps(payload),
+                lambda: json.dumps(self.__tentar_realizar_request(payload)[0]),
             )
+            return self.__parsear_resposta(json.loads(resposta_bruta))
         else:
-            resultado_bruto = self.__obter_resultado(payload)
-
-        return self.estrutura_esperada.model_validate(json.loads(resultado_bruto))
+            return self.__tentar_realizar_request(payload)[1]
 
     def obter_json_schema(self):
         return self.__simplificar_schema(self.estrutura_esperada.model_json_schema())
 
-    def __obter_resultado(self, payload: dict[str, Any]) -> str:
-        resposta = self.__tentar_realizar_request(payload)
-        return str(
+    def __parsear_resposta(self, resposta: dict[str, Any]) -> T:
+        resposta_bruta = str(
             resposta.get("choices", [{}])[0].get("message", {}).get("content", "{}")
         )
+        resposta_estruturada = json.loads(resposta_bruta)
+        return self.estrutura_esperada.model_validate(resposta_estruturada)
 
     def __tentar_realizar_request(self, payload: dict[str, Any]):
         for tentativa in range(self.n_tentativas):
@@ -88,13 +96,19 @@ class EstruturadorDadosLLM(Generic[T]):
                 )
 
                 resposta.raise_for_status()
-                return resposta.json()
+                resposta_bruta = resposta.json()
+
+                # Só aceito a resposta se eu conseguir parsear ela.
+                # Retorno tanto o bruto como o parseado, pois uso o
+                # bruto para salvar em cache
+                return resposta_bruta, self.__parsear_resposta(resposta_bruta)
 
             except (
                 requests.Timeout,
                 requests.ConnectionError,
                 requests.HTTPError,
                 requests.JSONDecodeError,
+                ValidationError,
             ) as e:
                 if tentativa == self.n_tentativas - 1:
                     # Evitando um delay desnecessário na ultima tentativa
@@ -144,7 +158,7 @@ def _cachear_sqlite(path: Path, entrada: str, executor: Callable[[], str]):
         ).fetchmany(1)
 
         if len(res) and res[0]:
-            return res[0][0]  # Linha 0, atributo 0
+            return str(res[0][0])  # Linha 0, atributo 0
 
         res = executor()
         cur.execute(
