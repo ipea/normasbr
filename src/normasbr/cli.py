@@ -5,9 +5,6 @@ import typer
 from tqdm import tqdm
 
 import normasbr
-from normasbr.classificacao.macrodimensao.existencia.anomalia import (
-    classificar_anomalias,
-)
 from normasbr.classificacao.macrodimensao.existencia.classificador import (
     classificar_arquivo,
 )
@@ -92,14 +89,6 @@ def classificar_macrodim(
 ) -> None:
     """Classifica as macrodimensões (via LLM) das normativas de entrada."""
     classificar_arquivo(entrada, saida)
-
-
-@app.command("classificar_anomalias")
-def classificar_anom(
-    entrada: Path = typer.Argument(help="Arquivo YML com as normativas."),
-) -> None:
-    """Detecta anomalias estruturais (via LLM) nas normativas de entrada."""
-    classificar_anomalias(entrada)
 
 
 @app.command("download")

@@ -1,3 +1,4 @@
+import csv
 import os
 from pathlib import Path
 from typing import cast
@@ -16,9 +17,6 @@ from normasbr.estrutura.travessia import (
 
 
 class ExistenciaMacrodimensoes(BaseModel):
-    natureza_cooperacao: bool
-    destinatario: bool
-    setor: bool
     acesso: bool
     execucao: bool
     prestacao_contas: bool
@@ -69,70 +67,53 @@ def classificar_arquivo(
     entrada: Path,
     saida: Path,
 ):
-    import duckdb
 
     normas = carregar_normativas(entrada)
-
-    conn = duckdb.connect(saida)
-    _ = conn.execute(
-        """CREATE TABLE IF NOT EXISTS classificacao_macrodimensao (
-            norma text,
-            origem text,
-            prompt text,
-            modelo text,
-
-            acesso bool,
-            execucao bool,
-            prestacao_contas bool,
-
-            fundamentacao text,
-            );
-        """
-    )
-
     artigos = list(procurar_dispositivos(normas, "artigo"))
-    for a in tqdm(artigos):
-        # A pilha sempre termina num Dispositivo (intermediário), mas o tipo
-        # declarado é Elementos (inclui terminais) e list é invariante.
-        pilha = cast("list[ElementoIntermediario]", a)
-        norma = cast(Normativa, pilha[0])
-        prompt = gerar_visualizacao_textual(pilha)
-        modelo = (os.getenv("LLM_MODEL", ""),)
 
-        print(f"[Normativa]\n{prompt}\n")
-        existe = conn.execute(
-            "select 1 from classificacao_macrodimensao where prompt = ? and modelo = ? limit 1",
-            (prompt, modelo),
-        ).fetchall()
-
-        if len(existe):
-            print("[Já Classificada]")
-            continue
-
-        classificacao = classificador(normativa=prompt)
-
-        _ = conn.execute(
-            """ INSERT INTO classificacao_macrodimensao VALUES (?,
-            ?, ?, ?, ?, ?, ?, ?); """,
-            (
-                norma.nome,
-                norma.origem,
-                prompt,
-                modelo,
-                classificacao.acesso,
-                classificacao.execucao,
-                classificacao.prestacao_contas,
-                classificacao.fundamentacao,
-            ),
+    with open(saida, "w", newline="") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "Nome",
+                "Origem",
+                "Prompt",
+                "Modelo",
+                "Acesso",
+                "Execução",
+                "Prestação Contas",
+                "Fundamentação",
+            ],
         )
-        print(f"""
-[Classificação]
+        writer.writeheader()
+
+        for a in tqdm(artigos):
+            # A pilha sempre termina num Dispositivo (intermediário), mas o tipo
+            # declarado é Elementos (inclui terminais) e list é invariante.
+            pilha = cast("list[ElementoIntermediario]", a)
+            norma = cast(Normativa, pilha[0])
+            prompt = gerar_visualizacao_textual(pilha)
+            modelo = (os.getenv("LLM_MODEL", ""),)
+
+            print(f"[Normativa]\n{prompt}\n")
+
+            classificacao = classificador(normativa=prompt)
+            writer.writerow(
+                {
+                    "Nome": norma.nome,
+                    "Origem": norma.origem,
+                    "Prompt": prompt,
+                    "Modelo": modelo,
+                    "Acesso": classificacao.acesso,
+                    "Execução": classificacao.execucao,
+                    "Prestação Contas": classificacao.prestacao_contas,
+                    "Fundamentação": classificacao.fundamentacao,
+                }
+            )
+
+            print(f"""[Classificação]
 acesso = {classificacao.acesso}
 execucao = {classificacao.execucao}
 prestacao_contas = {classificacao.prestacao_contas}
 fundamentacao = {classificacao.fundamentacao}
 """)
-
-    # _ = conn.execute(
-    #     f"COPY classificacao_macrodimensao TO '{saida!s}' (FORMAT parquet) "
-    # )

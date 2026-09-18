@@ -53,7 +53,7 @@ class EstruturadorDadosLLM(Generic[T]):
         }
 
         if self.cache:
-            resultado_bruto = __cachear_sqlite(
+            resultado_bruto = _cachear_sqlite(
                 self.cache, json.dumps(payload), lambda: self.__obter_resultado(payload)
             )
         else:
@@ -132,20 +132,22 @@ class EstruturadorDadosLLM(Generic[T]):
         return schema
 
 
-def __cachear_sqlite(path: Path, entrada: str, executor: Callable[[], str]):
+def _cachear_sqlite(path: Path, entrada: str, executor: Callable[[], str]):
     with sqlite3.connect(path) as conn:
-        conn.execute("PRAGMA journal_mode = WAL;")
-        conn.execute(
-            "CREATE TABLE prompt_cache IF NOT EXISTS (id int, entrada text, resultado text);"
+        cur = conn.cursor()
+        cur.execute("PRAGMA journal_mode = WAL;")
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS prompt_cache (id int, entrada text, resultado text);"
         )
-        res = conn.execute(
-            "SELECT resultado FROM prompt_cache WHERE entrada = ? LIMIT 1;", (entrada)
-        ).fetchone()
-        if res:
-            return res
+        res = cur.execute(
+            "SELECT resultado FROM prompt_cache WHERE entrada = ?;", (entrada,)
+        ).fetchmany(1)
+
+        if len(res) and res[0]:
+            return res[0][0]  # Linha 0, atributo 0
 
         res = executor()
-        conn.execute(
+        cur.execute(
             "INSERT INTO prompt_cache(id, entrada, resultado) VALUES (?, ?, ?);",
             (time.time_ns(), entrada, res),
         ).fetchone()
