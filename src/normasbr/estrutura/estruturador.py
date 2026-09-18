@@ -157,7 +157,7 @@ def obter_id_paragrafo(texto: str):
 OMISSIS = re.compile(r".*[.]{4,}\s*$")
 
 NOTA_STATUS_LINK = re.compile(
-    r"^(\([^()]*\)\.?|vig[eê]ncia|regulamento|reda[cç][aã]o dada|revogado|vide)$",
+    r"^(\([^()]*\)\.?|vig[eê]ncia|regulamento|reda[cç][aã]o dada|revogado|vide)(\s|\.|;)*$",
     re.IGNORECASE,
 )
 
@@ -220,6 +220,22 @@ def limpar_espacos(elem: Elemento) -> None:
         setattr(elem, "texto", ESPACOS.sub(" ", texto).strip())
 
 
+VETADO_REVOGADO = re.compile(r"\((vetado|revogado)[^\)]+\)(;|\.)?$", re.IGNORECASE)
+
+
+def marcar_revogados(elem: Ementa | Agrupador | Dispositivo) -> None:
+    if not elem.efetivo:
+        return
+
+    for n in elem.notas_status:
+        if n.texto.lower().startswith(("(revogado", "revogado", "(vetado", "vetado")):
+            elem.efetivo = False
+
+    if elem.texto and bool(VETADO_REVOGADO.match(elem.texto)):
+        elem.efetivo = False
+        return
+
+
 def aplicar_processamento_final(normas: list[Normativa]) -> None:
     pendentes: list[Elementos] = []
     pendentes.extend(reversed(normas))
@@ -230,6 +246,7 @@ def aplicar_processamento_final(normas: list[Normativa]) -> None:
 
         if isinstance(proximo, (Ementa, Agrupador, Dispositivo)):
             processar_notas_status(proximo)
+            marcar_revogados(proximo)
         if isinstance(proximo, ElementoIntermediario):
             pendentes.extend(proximo.filhos)
 

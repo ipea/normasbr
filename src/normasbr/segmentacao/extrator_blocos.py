@@ -300,7 +300,9 @@ def comeca_com_riscado(el) -> bool:
         # encontrou texto relevante
         texto = node.text_content().strip()
         if texto:
-            return node.tag in {"s", "del", "strike"}
+            tem_estilo_strike = "text-decoration: line-through" in node.get("style", "")
+            eh_tag_strike = node.tag in {"s", "del", "strike"}
+            return tem_estilo_strike or eh_tag_strike
 
     return False
 
