@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from normasbr.estrutura.qualidade import avaliar_qualidade
 from normasbr.ingestao import downloader
 import typer
 from tqdm import tqdm
@@ -80,6 +81,22 @@ def estruturar(
     else:
         with open(saida, mode="w") as f:
             _ = f.write(norma_yml)
+
+
+@app.command()
+def avaliar(
+    entrada: str = typer.Argument(help="Arquivo YAML com as normativas estruturadas."),
+) -> None:
+    normativas = normasbr.carregar_normativas(Path(entrada))
+    for n in normativas:
+        print(f"# {n.nome}")
+        aval = avaliar_qualidade(n)
+        if len(aval.achados):
+            for i, a in enumerate(aval.achados):
+                print(f"{i}) {a}")
+        else:
+            print("Nenhum problema encontrado.")
+        print()
 
 
 @app.command("classificar_macrodim")
