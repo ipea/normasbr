@@ -73,3 +73,5 @@ exclude_lines = [
 [tool.basedpyright]
 typeCheckingMode = "standard"
 include = ["src", "tests"]
+# Utilitários avulsos: dependências declaradas no cabeçalho PEP 723 de cada script.
+exclude = ["scripts"]

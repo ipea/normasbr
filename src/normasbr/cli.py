@@ -1,13 +1,13 @@
 from pathlib import Path
 
-from normasbr.ingestao import downloader
 import typer
-from tqdm import tqdm
 
 import normasbr
 from normasbr.classificacao.macrodimensao.existencia.classificador import (
     classificar_arquivo,
 )
+from normasbr.config import Config
+from normasbr.ingestao import downloader
 from normasbr.segmentacao import diff_segmentacao
 
 app = typer.Typer(
@@ -19,16 +19,49 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-# ingestao > extrator_bloco > segmentador > estruturador > classificador > visualizacao
-# html     > ...            > ...         > yml          > parquet       > html/xlsx
+
+def _mostrar_versao(valor: bool) -> None:
+    if valor:
+        typer.echo(f"normasbr {normasbr.__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    versao: bool = typer.Option(
+        False,
+        "--version",
+        callback=_mostrar_versao,
+        is_eager=True,
+        help="Mostra a versão instalada e sai.",
+    ),
+) -> None:
+    """Utilitário de linha de comando do normasbr."""
 
 
 @app.command()
 def ingerir(
     entrada: str = typer.Argument(help="URL ou caminho (arquivo/diretório) de origem."),
+    saida: Path | None = typer.Option(
+        None,
+        "--saida",
+        "-o",
+        help="Diretório onde gravar os HTMLs normalizados. Sem ele, imprime na tela.",
+    ),
 ) -> None:
-    """Converte a entrada em HTML normalizado e imprime o conteúdo."""
-    print(normasbr.despachar_ingestao(entrada))
+    """Converte a entrada em HTML normalizado."""
+    brutas = normasbr.despachar_ingestao(entrada, progresso=True)
+
+    if saida is None:
+        for bruta in brutas:
+            typer.echo(bruta.texto)
+        return
+
+    saida.mkdir(parents=True, exist_ok=True)
+    for i, bruta in enumerate(brutas, 1):
+        nome = Path(bruta.origem).stem or f"normativa-{i}"
+        _ = (saida / f"{nome}.html").write_text(bruta.texto, encoding="utf-8")
+    typer.echo(f"{len(brutas)} arquivo(s) gravado(s) em {saida}")
 
 
 @app.command()
@@ -36,10 +69,10 @@ def segmentar(
     entrada: str = typer.Argument(help="URL ou caminho (arquivo/diretório) de origem."),
 ) -> None:
     """Extrai blocos, segmenta e imprime cada segmento com seu tipo."""
-    htmls = normasbr.despachar_ingestao(entrada)
+    htmls = normasbr.despachar_ingestao(entrada, progresso=True)
     segmentador = normasbr.Segmentador()
 
-    for html in tqdm(htmls, desc="Processando arquivos"):
+    for html in htmls:
         blocos = normasbr.extrair_blocos(html)
         segmentos = segmentador.segmentar(blocos)
         print(f"Arquivo: {html.origem}")
@@ -65,39 +98,45 @@ def estruturar(
     ),
 ) -> None:
     """Segmenta e estrutura a entrada, gerando normativas em YML."""
-    htmls = normasbr.despachar_ingestao(entrada)
-    segmentador = normasbr.Segmentador()
-
-    normas: list[normasbr.Normativa] = []
-    for html in tqdm(htmls, desc="Processando arquivos"):
-        blocos = normasbr.extrair_blocos(html)
-        segmentos = segmentador.segmentar(blocos)
-        normas += normasbr.estruturar(segmentos, leniente=True)
-
+    normas = normasbr.processar(entrada, leniente=True, progresso=True)
     norma_yml = normasbr.formatar_normativas_yml(normas)
+
     if not saida:
-        print(norma_yml)
+        typer.echo(norma_yml)
     else:
-        with open(saida, mode="w") as f:
-            _ = f.write(norma_yml)
+        _ = saida.write_text(norma_yml, encoding="utf-8")
 
 
 @app.command("classificar_macrodim")
 def classificar_macrodim(
     entrada: Path = typer.Argument(help="Arquivo YML com as normativas."),
-    saida: Path = typer.Argument(help="Arquivo parquet de saída."),
+    saida: Path = typer.Argument(help="Arquivo CSV de saída."),
 ) -> None:
     """Classifica as macrodimensões (via LLM) das normativas de entrada."""
+    _validar_config_llm()
     classificar_arquivo(entrada, saida)
 
 
 @app.command("download")
-def dowload(
+def baixar(
     entrada: Path = typer.Argument(help="Arquivo TSV."),
-    saida: Path = typer.Argument(help="Pasta saida."),
+    saida: Path = typer.Argument(help="Pasta de saída."),
 ) -> None:
-    """Baixa arquivo tsv"""
+    """Baixa os arquivos listados no TSV."""
     downloader.download_tsv(entrada, saida)
+
+
+def _validar_config_llm() -> None:
+    faltantes = [
+        nome for nome in ("LLM_API_BASE", "LLM_MODEL") if not getattr(Config, nome)
+    ]
+    if faltantes:
+        typer.echo(
+            f"Defina {', '.join(faltantes)} no ambiente ou no .env para usar a "
+            "classificação por LLM.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
