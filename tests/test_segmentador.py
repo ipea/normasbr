@@ -22,8 +22,9 @@ def segmentar(texto: str) -> list[Segmento]:
 def test_construtor_padrao_usa_regras_e_heuristicas_padrao():
     s = Segmentador()
 
-    assert s.regras is REGRAS_PADRAO
-    assert s.heuristicas is HEURISTICAS_PADRAO
+    assert s.regras == REGRAS_PADRAO
+    assert s.heuristicas == HEURISTICAS_PADRAO
+    assert s.regras is not REGRAS_PADRAO
 
 
 def test_construtor_aceita_regras_e_heuristicas_customizadas():

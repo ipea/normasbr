@@ -1,5 +1,6 @@
 import pytest
 
+from normasbr.erros import EntradaInvalida
 from normasbr.ingestao import url2html
 from normasbr.ingestao.despachante import despachar_ingestao, extrair_arquivo
 
@@ -41,7 +42,8 @@ def test_despachar_diretorio_ignora_arquivos_invalidos(tmp_path):
     (tmp_path / "lei.htm").write_text("<p>Art. 1º</p>", encoding="utf-8")
     (tmp_path / "ignorado.xyz").write_text("conteudo", encoding="utf-8")
 
-    resultado = despachar_ingestao(str(tmp_path))
+    with pytest.warns(UserWarning):
+        resultado = despachar_ingestao(str(tmp_path))
 
     assert len(resultado) == 1
     assert resultado[0].origem.endswith("lei.htm")
@@ -51,7 +53,7 @@ def test_despachar_arquivo_invalido_levanta_excecao(tmp_path):
     arquivo = tmp_path / "arquivo.xyz"
     arquivo.write_text("conteudo", encoding="utf-8")
 
-    with pytest.raises(Exception, match="Arquivo solicitado inválido"):
+    with pytest.raises(EntradaInvalida, match="Formato não suportado"):
         despachar_ingestao(str(arquivo))
 
 

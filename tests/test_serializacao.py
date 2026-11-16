@@ -1,7 +1,9 @@
 import json
 
+import pytest
 import yaml
 
+from normasbr.erros import EntradaInvalida
 from normasbr.estrutura.modelo import Dispositivo, Normativa
 from normasbr.estrutura.serializacao import (
     carregar_normativas,
@@ -83,3 +85,22 @@ def test_carregar_normativas(tmp_path):
     assert isinstance(normas[0], Normativa)
     assert normas[0].nome == "LEI Nº 8.112"
     assert normas[0].filhos[0].tipo == "artigo"  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_carregar_normativas_json(tmp_path):
+    js = formatar_normativas_json(normas_exemplo())
+    arquivo = tmp_path / "normas.json"
+    arquivo.write_text(js, encoding="utf-8")
+
+    normas = carregar_normativas(str(arquivo))
+
+    assert normas[0].nome == "LEI Nº 8.112"
+    assert normas[0].filhos[0].tipo == "artigo"  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_carregar_normativas_extensao_invalida(tmp_path):
+    arquivo = tmp_path / "normas.xml"
+    arquivo.write_text("<normas/>", encoding="utf-8")
+
+    with pytest.raises(EntradaInvalida, match="Formato não suportado"):
+        carregar_normativas(arquivo)
