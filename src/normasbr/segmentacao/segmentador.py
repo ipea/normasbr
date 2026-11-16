@@ -46,6 +46,8 @@ TipoSegmento = Literal[
 
 @dataclass
 class Segmento:
+    """Unidade atômica de texto com o tipo atribuído pelo segmentador."""
+
     tipo: TipoSegmento
     texto: str
     blocos: list[Bloco]
@@ -103,6 +105,8 @@ def strip_accents(s: str) -> str:
 
 @dataclass()
 class Regra:
+    """Associa uma expressão regular a um tipo de segmento."""
+
     tipo: TipoSegmento
     pattern: re.Pattern[str]
     incerto: bool = False
@@ -427,17 +431,27 @@ def corrige_bloco_parentesis(segmentos: list[Segmento]) -> list[Segmento]:
 
 
 class Segmentador:
+    """Classifica blocos de texto nos tipos de dispositivo de uma normativa.
+
+    As regras e heurísticas padrão podem ser substituídas para casos
+    específicos; as listas recebidas são copiadas, então alterar
+    :data:`REGRAS_PADRAO` depois de criar o segmentador não afeta a instância.
+    """
+
     def __init__(
         self,
         regras: list[Regra] | None = None,
         heuristicas: list[Callable[[list[Segmento]], list[Segmento]]] | None = None,
     ):
-        self.regras: list[Regra] = regras if regras is not None else REGRAS_PADRAO
+        self.regras: list[Regra] = (
+            list(regras) if regras is not None else list(REGRAS_PADRAO)
+        )
         self.heuristicas: list[Callable[[list[Segmento]], list[Segmento]]] = (
-            heuristicas if heuristicas is not None else HEURISTICAS_PADRAO
+            list(heuristicas) if heuristicas is not None else list(HEURISTICAS_PADRAO)
         )
 
     def segmentar(self, blocos: Iterable[Bloco]) -> list[Segmento]:
+        """Transforma blocos extraídos do HTML em segmentos classificados."""
         segs = [seg for bloco in blocos for seg in self._gerar_segmentos(bloco)]
         segs = self._refinar(segs)
         return segs

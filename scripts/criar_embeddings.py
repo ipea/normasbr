@@ -4,11 +4,16 @@
 # dependencies = ["model2vec"]
 # ///
 
+# Utilitário avulso: dependências vêm do cabeçalho PEP 723.
+# pyright: reportMissingImports=false
+
 from collections import OrderedDict
 from pathlib import Path
+from typing import cast
 
 from model2vec import StaticModel
 
+from normasbr.estrutura.modelo import Normativa
 from normasbr.estrutura.serializacao import carregar_normativas
 from normasbr.estrutura.travessia import (
     gerar_visualizacao_textual,
@@ -21,7 +26,7 @@ def carregar():
     artigos_brutos = procurar_dispositivos(normas, "artigo")
     resultado = {}
     for a in artigos_brutos:
-        norma = a[0]
+        norma = cast(Normativa, a[0])
 
         if norma.nome not in resultado:
             ementa = norma.ementa[0].texto if len(norma.ementa) else None
@@ -54,8 +59,9 @@ def criar_embeddings(normas):
 
 
 def main():
-    import numpy as np
     import pickle
+
+    import numpy as np
 
     normas = carregar()
     cache, embed = criar_embeddings(normas)

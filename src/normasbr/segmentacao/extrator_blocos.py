@@ -173,6 +173,8 @@ def _corrigir_html_blocos(doc_html: str) -> str:
 
 @dataclass
 class Bloco:
+    """Trecho de texto extraído de um bloco HTML, com metadados de origem."""
+
     texto: str
     links: list[tuple[str, str]]
     comeca_com_riscado: bool
@@ -181,6 +183,11 @@ class Bloco:
 
 
 def extrair_blocos(normativa_bruta: NormativaBruta) -> list[Bloco]:
+    """Extrai os blocos de texto (``p``, ``li``, ``td`` etc.) do HTML canônico.
+
+    Corrige antes os fechamentos de tags inline que quebram o parser em HTMLs
+    malformados, comuns nas páginas do Planalto.
+    """
     doc_html = _corrigir_html_blocos(normativa_bruta.texto)
 
     root = html.fromstring(doc_html)

@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 
 from normasbr.estrutura.modelo import (
     Agrupador,
@@ -9,14 +9,15 @@ from normasbr.estrutura.modelo import (
     ContextoAlteracaoAgrupador,
     ContextoAlteracaoDispositivo,
     Dispositivo,
+    Elemento,
     ElementoIntermediario,
-    Elementos,
     Modificavel,
     Normativa,
 )
 
 
-def gerar_texto(elem: ElementoIntermediario | Elementos) -> list[str]:
+def gerar_texto(elem: Elemento) -> list[str]:
+    """Renderiza um único elemento como linhas de texto."""
     match elem:
         case Normativa(nome=nome, ementa=ementas):
             ementas = [e.texto for e in ementas if e.efetivo]
@@ -42,12 +43,22 @@ def gerar_texto(elem: ElementoIntermediario | Elementos) -> list[str]:
             return [str(elem)]
 
 
-def procurar_dispositivos(normas: list[Normativa], tipo_dispositivo: str):
-    pendentes: list[list[Elementos]] = [
+def procurar_dispositivos(
+    normas: list[Normativa], tipo_dispositivo: str
+) -> Iterator[list[ElementoIntermediario]]:
+    """Percorre a árvore e devolve a pilha até cada dispositivo do tipo pedido.
+
+    Cada item produzido é o caminho ``[norma, ..., dispositivo]``, útil para
+    montar o contexto textual do dispositivo:
+
+    >>> for pilha in normasbr.procurar_dispositivos(normas, "artigo"):
+    ...     print(normasbr.gerar_visualizacao_textual(pilha))
+    """
+    pendentes: list[list[ElementoIntermediario]] = [
         [norma, f]
         for norma in normas
         for f in norma.filhos
-        if getattr(f, "efetivo", False)
+        if isinstance(f, ElementoIntermediario) and getattr(f, "efetivo", False)
     ][::-1]
 
     while len(pendentes) > 0:
@@ -62,10 +73,15 @@ def procurar_dispositivos(normas: list[Normativa], tipo_dispositivo: str):
                 yield pilha_atual
 
         elif isinstance(elemento, ElementoIntermediario):
-            pendentes += [pilha_atual + [f] for f in elemento.filhos][::-1]
+            pendentes += [
+                pilha_atual + [f]
+                for f in elemento.filhos
+                if isinstance(f, ElementoIntermediario)
+            ][::-1]
 
 
 def gerar_visualizacao_textual(pilha: Sequence[ElementoIntermediario]) -> str:
+    """Renderiza a pilha de uma normativa/dispositivo como texto legível."""
     res = [linha for elem in pilha for linha in gerar_texto(elem)]
 
     pendentes = pilha[-1].filhos[::-1]

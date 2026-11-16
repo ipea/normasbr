@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import TypeGuard
 
+from normasbr.erros import EstruturacaoInvalida
 from normasbr.estrutura.modelo import (
     Agrupador,
     AlteracaoAgrupador,
@@ -101,20 +102,20 @@ def melhor_pai(
             is_usa_tipos_dispositivo(elemento_atual)
             and pai_tem_dispositivo
             and isinstance(pai, EmpilhavelPorTipo)
+            and PRIORIDADE_TIPOS_DISPOSITIVOS.get(pai.tipo, 999)
+            < PRIORIDADE_TIPOS_DISPOSITIVOS.get(elemento_atual.tipo, 999)
         ):
-            if PRIORIDADE_TIPOS_DISPOSITIVOS.get(
-                pai.tipo, 999
-            ) < PRIORIDADE_TIPOS_DISPOSITIVOS.get(elemento_atual.tipo, 999):
-                # Quando tem tipo de dispositivo, já posso parar o loop e aceitar
-                # o valor
-                return i
+            # Quando tem tipo de dispositivo, já posso parar o loop e aceitar
+            # o valor
+            return i
 
-        if isinstance(pai, EmpilhavelPorTipo) and isinstance(
-            elemento_atual, EmpilhavelPorTipo
-        ):
+        if (
+            isinstance(pai, EmpilhavelPorTipo)
+            and isinstance(elemento_atual, EmpilhavelPorTipo)
             # Quando é do mesmo tipo, já posso parar o loop também e usar o pai desse cara
-            if pai.tipo == elemento_atual.tipo:
-                return i - 1
+            and pai.tipo == elemento_atual.tipo
+        ):
+            return i - 1
 
         if melhor_id is None:
             melhor_id = i
@@ -215,9 +216,22 @@ def processar_notas_status(
 
 
 def limpar_espacos(elem: Elemento) -> None:
-    texto = getattr(elem, "texto", None)
-    if isinstance(texto, str):
-        setattr(elem, "texto", ESPACOS.sub(" ", texto).strip())
+    if (
+        isinstance(
+            elem,
+            (
+                Ementa,
+                AlteracaoEmenta,
+                AlteracaoAgrupador,
+                AlteracaoDispositivo,
+                Agrupador,
+                Dispositivo,
+                Pena,
+            ),
+        )
+        and elem.texto is not None
+    ):
+        elem.texto = ESPACOS.sub(" ", elem.texto).strip()
 
 
 VETADO_REVOGADO = re.compile(r"\((vetado|revogado)[^\)]+\)(;|\.)?$", re.IGNORECASE)
@@ -340,6 +354,18 @@ def converter(seg: Segmento):
 
 
 def estruturar(segmentos: list[Segmento], leniente: bool = False) -> list[Normativa]:
+    """Monta a árvore hierárquica das normativas a partir dos segmentos.
+
+    Args:
+        segmentos: saída do :class:`~normasbr.segmentacao.segmentador.Segmentador`.
+        leniente: quando ``True``, ignora segmentos que não puderem ser
+            encaixados; quando ``False``, levanta
+            :class:`normasbr.erros.EstruturacaoInvalida`.
+
+    Returns:
+        Uma :class:`~normasbr.estrutura.modelo.Normativa` por título de
+        normativa encontrado, sem as que ficaram sem filhos.
+    """
     stack: list[ElementoIntermediario] = []
     normativas: list[Normativa] = []
 
@@ -401,9 +427,11 @@ def estruturar(segmentos: list[Segmento], leniente: bool = False) -> list[Normat
 
         if seg.tipo in ("CONTINUACAO", "ENUMERACAO"):
             anterior = stack[-1]
-            texto_anterior = getattr(anterior, "texto", None)
-            if texto_anterior is not None:
-                setattr(anterior, "texto", texto_anterior + " " + seg.texto)
+            if (
+                isinstance(anterior, (Agrupador, Dispositivo, AlteracaoDispositivo))
+                and anterior.texto is not None
+            ):
+                anterior.texto += " " + seg.texto
             elif isinstance(anterior, Normativa):
                 if ultimo_bloco_nao_empilhavel == "EMENTA":
                     anterior.ementa[-1].texto += " " + seg.texto
@@ -522,18 +550,20 @@ def estruturar(segmentos: list[Segmento], leniente: bool = False) -> list[Normat
             #     print(s)
             #     print()
 
-            msg = f"Não foi possível processar: {seg!r}"
             if not leniente:
-                raise Exception(msg)
+                raise EstruturacaoInvalida(
+                    f"Não foi possível encaixar o segmento {seg.tipo} "
+                    f"({seg.obter_origem()}): {seg.texto!r}"
+                )
             else:
-                # print(msg)
                 continue
 
         stack[pai_id].filhos += [elemento_atual]
         stack = stack[: pai_id + 1]
-        # Todos os terminais foram tratados com continue acima; só intermediários chegam aqui.
-        # assert isinstance(elemento_atual, ElementoIntermediario)
-        stack.append(elemento_atual)
+        # Terminais foram tratados com continue acima; só intermediários
+        # continuam na pilha.
+        if isinstance(elemento_atual, ElementoIntermediario):
+            stack.append(elemento_atual)
 
     normativas = [n for n in normativas if len(n.filhos)]
     aplicar_processamento_final(normativas)

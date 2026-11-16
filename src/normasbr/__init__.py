@@ -6,14 +6,25 @@ estruturação > serialização (YML/JSON) > classificação.
 Exemplo de uso da biblioteca:
 
     >>> import normasbr
-    >>> normativas_brutas = normasbr.despachar_ingestao("lei.htm")
-    >>> blocos = normasbr.extrair_blocos(normativas_brutas[0])
+    >>> normas = normasbr.processar("lei.htm")
+    >>> normas[0].nome
+
+O pipeline também pode ser usado etapa por etapa:
+
+    >>> brutas = normasbr.despachar_ingestao("lei.htm")
+    >>> blocos = normasbr.extrair_blocos(brutas[0])
     >>> segmentos = normasbr.Segmentador().segmentar(blocos)
     >>> normas = normasbr.estruturar(segmentos, leniente=True)
 """
 
 from importlib.metadata import PackageNotFoundError, version
 
+from normasbr.api import processar
+from normasbr.erros import (
+    EntradaInvalida,
+    ErroNormasbr,
+    EstruturacaoInvalida,
+)
 from normasbr.estrutura.estruturador import estruturar
 from normasbr.estrutura.modelo import (
     Agrupador,
@@ -61,6 +72,9 @@ __all__ = [
     "Link",
     "Normativa",
     "NormativaBruta",
+    "EntradaInvalida",
+    "ErroNormasbr",
+    "EstruturacaoInvalida",
     "Segmentador",
     "Segmento",
     "carregar_normativas",
@@ -71,5 +85,6 @@ __all__ = [
     "formatar_normativas_yml",
     "gerar_texto",
     "gerar_visualizacao_textual",
+    "processar",
     "procurar_dispositivos",
 ]
